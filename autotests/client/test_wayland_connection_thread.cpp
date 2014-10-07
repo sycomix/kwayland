@@ -22,6 +22,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 // KWin
 #include "../../src/client/connection_thread.h"
 #include "../../src/client/event_queue.h"
+#include "../../src/client/registry.h"
 #include "../../src/server/display.h"
 // Wayland
 #include <wayland-client-protocol.h>
@@ -38,6 +39,8 @@ private Q_SLOTS:
     void testInitConnectionNoThread();
     void testConnectionFailure();
     void testConnectionDieing();
+    void testGlobalSync();
+    void testGlobalSyncThreaded();
     void testConnectionThread();
 
 private:
@@ -78,6 +81,7 @@ void TestWaylandConnectionThread::testInitConnectionNoThread()
 
     QSignalSpy connectedSpy(connection.data(), SIGNAL(connected()));
     QSignalSpy failedSpy(connection.data(), SIGNAL(failed()));
+
     connection->initConnection();
     QVERIFY(connectedSpy.wait());
     QCOMPARE(connectedSpy.count(), 1);
@@ -98,6 +102,52 @@ void TestWaylandConnectionThread::testConnectionFailure()
     QCOMPARE(failedSpy.count(), 1);
     QVERIFY(!connection->display());
 }
+
+void TestWaylandConnectionThread::testGlobalSync()
+{
+    QScopedPointer<KWayland::Client::ConnectionThread> connection(new KWayland::Client::ConnectionThread);
+    connection->setSocketName(s_socketName);
+    QSignalSpy connectedSpy(connection.data(), SIGNAL(connected()));
+    connection->initConnection();
+    QVERIFY(connectedSpy.wait());
+
+    auto registry = new KWayland::Client::Registry(this);
+    QSignalSpy syncSpy(registry, SIGNAL(sync()));
+    // Most simple case: don't even use the ConnectionThread,
+    // just its display.
+    registry->create(connection->display());
+    registry->setup();
+    QVERIFY(syncSpy.wait());
+    QCOMPARE(syncSpy.count(), 1);
+}
+
+void TestWaylandConnectionThread::testGlobalSyncThreaded()
+{
+    // More complex case, use a ConnectionThread, in a different Thread,
+    // and our own EventQueue
+    QScopedPointer<KWayland::Client::ConnectionThread> connection(new KWayland::Client::ConnectionThread);
+    connection->setSocketName(s_socketName);
+    QThread *thread = new QThread;
+    connection->moveToThread(thread);
+    thread->start();
+
+    QSignalSpy connectedSpy(connection.data(), SIGNAL(connected()));
+    connection->initConnection();
+
+    QVERIFY(connectedSpy.wait());
+    auto queue = new KWayland::Client::EventQueue(this);
+    queue->setup(connection.data());
+
+    auto registry = new KWayland::Client::Registry(this);
+    QSignalSpy syncSpy(registry, SIGNAL(sync()));
+    registry->setEventQueue(queue);
+    registry->create(connection.data());
+    registry->setup();
+
+    QVERIFY(syncSpy.wait());
+    QCOMPARE(syncSpy.count(), 1);
+}
+
 
 static void registryHandleGlobal(void *data, struct wl_registry *registry,
                                  uint32_t name, const char *interface, uint32_t version)
