@@ -22,7 +22,6 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 // KWin
 #include "../../src/client/connection_thread.h"
 #include "../../src/client/event_queue.h"
-#include "../../src/client/registry.h"
 #include "../../src/server/display.h"
 // Wayland
 #include <wayland-client-protocol.h>
@@ -79,7 +78,6 @@ void TestWaylandConnectionThread::testInitConnectionNoThread()
 
     QSignalSpy connectedSpy(connection.data(), SIGNAL(connected()));
     QSignalSpy failedSpy(connection.data(), SIGNAL(failed()));
-
     connection->initConnection();
     QVERIFY(connectedSpy.wait());
     QCOMPARE(connectedSpy.count(), 1);
