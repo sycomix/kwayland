@@ -21,6 +21,7 @@ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include <QtTest/QtTest>
 // KWin
 #include "../../src/client/connection_thread.h"
+#include "../../src/client/event_queue.h"
 #include "../../src/client/registry.h"
 #include "../../src/server/compositor_interface.h"
 #include "../../src/server/display.h"
@@ -40,6 +41,8 @@ private Q_SLOTS:
     void cleanup();
 
     void testCreate();
+    void testGlobalSync();
+    void testGlobalSyncThreaded();
     void testBindCompositor();
     void testBindShell();
     void testBindOutput();
@@ -272,6 +275,54 @@ void TestWaylandRegistry::testDestroy()
 
     // calling destroy again should not fail
     registry.destroy();
+}
+
+void TestWaylandRegistry::testGlobalSync()
+{
+    QScopedPointer<KWayland::Client::ConnectionThread> connection(new KWayland::Client::ConnectionThread);
+    connection->setSocketName(s_socketName);
+    QSignalSpy connectedSpy(connection.data(), SIGNAL(connected()));
+    connection->initConnection();
+    QVERIFY(connectedSpy.wait());
+
+    auto registry = new KWayland::Client::Registry(this);
+    QSignalSpy syncSpy(registry, SIGNAL(sync()));
+    // Most simple case: don't even use the ConnectionThread,
+    // just its display.
+    registry->create(connection->display());
+    registry->setup();
+    QVERIFY(syncSpy.wait());
+    QCOMPARE(syncSpy.count(), 1);
+}
+
+void TestWaylandRegistry::testGlobalSyncThreaded()
+{
+    // More complex case, use a ConnectionThread, in a different Thread,
+    // and our own EventQueue
+    QScopedPointer<KWayland::Client::ConnectionThread> connection(new KWayland::Client::ConnectionThread);
+    connection->setSocketName(s_socketName);
+    QThread *thread = new QThread;
+    connection->moveToThread(thread);
+    thread->start();
+
+    QSignalSpy connectedSpy(connection.data(), SIGNAL(connected()));
+    connection->initConnection();
+
+    QVERIFY(connectedSpy.wait());
+    auto queue = new KWayland::Client::EventQueue(this);
+    queue->setup(connection.data());
+
+    auto registry = new KWayland::Client::Registry(this);
+    QSignalSpy syncSpy(registry, SIGNAL(sync()));
+    registry->setEventQueue(queue);
+    registry->create(connection.data());
+    registry->setup();
+
+    QVERIFY(syncSpy.wait());
+    QCOMPARE(syncSpy.count(), 1);
+    thread->quit();
+    thread->wait();
+    delete thread;
 }
 
 QTEST_GUILESS_MAIN(TestWaylandRegistry)
