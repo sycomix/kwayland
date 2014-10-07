@@ -404,7 +404,7 @@ Q_SIGNALS:
      * such as the output's geometry, modes, etc..
      * This signal is emitted from the wl_display_sync callback.
      **/
-    void sync();
+    void interfacesAnnounced();
 
 private:
     class Private;

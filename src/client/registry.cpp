@@ -102,23 +102,27 @@ Registry::~Registry()
 void Registry::release()
 {
     d->registry.release();
+    if (d->callback) {
+        wl_callback_destroy(d->callback);
+        d->callback = nullptr;
+    }
 }
 
 void Registry::destroy()
 {
     d->registry.destroy();
+    if (d->callback) {
+        wl_callback_destroy(d->callback);
+        d->callback = nullptr;
+    }
 }
 
 void Registry::create(wl_display *display)
 {
     Q_ASSERT(display);
     Q_ASSERT(!isValid());
-<<<<<<< HEAD
     d->registry.setup(wl_display_get_registry(display));
-=======
-    d->registry = wl_display_get_registry(display);
     d->callback = wl_display_sync(display);
->>>>>>> Add Registry::sync() signal
     if (d->queue) {
         d->queue->addProxy(d->registry);
         d->queue->addProxy(d->callback);
@@ -184,11 +188,12 @@ void Registry::Private::globalSync(void* data, wl_callback* callback, uint32_t s
     Q_ASSERT(r->callback == callback);
     r->handleGlobalSync();
     wl_callback_destroy(callback);
+    callback = nullptr;
 }
 
 void Registry::Private::handleGlobalSync()
 {
-    emit q->sync();
+    emit q->interfacesAnnounced();
 }
 
 static Registry::Interface nameToInterface(const char *interface)

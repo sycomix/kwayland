@@ -286,7 +286,7 @@ void TestWaylandRegistry::testGlobalSync()
     QVERIFY(connectedSpy.wait());
 
     auto registry = new KWayland::Client::Registry(this);
-    QSignalSpy syncSpy(registry, SIGNAL(sync()));
+    QSignalSpy syncSpy(registry, SIGNAL(interfacesAnnounced()));
     // Most simple case: don't even use the ConnectionThread,
     // just its display.
     registry->create(connection->display());
@@ -313,7 +313,7 @@ void TestWaylandRegistry::testGlobalSyncThreaded()
     queue->setup(connection.data());
 
     auto registry = new KWayland::Client::Registry(this);
-    QSignalSpy syncSpy(registry, SIGNAL(sync()));
+    QSignalSpy syncSpy(registry, SIGNAL(interfacesAnnounced()));
     registry->setEventQueue(queue);
     registry->create(connection.data());
     registry->setup();
