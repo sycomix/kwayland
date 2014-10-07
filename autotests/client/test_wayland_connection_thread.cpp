@@ -146,6 +146,9 @@ void TestWaylandConnectionThread::testGlobalSyncThreaded()
 
     QVERIFY(syncSpy.wait());
     QCOMPARE(syncSpy.count(), 1);
+    thread->quit();
+    thread->wait();
+    delete thread;
 }
 
 
