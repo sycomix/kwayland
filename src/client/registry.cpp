@@ -56,7 +56,6 @@ public:
     WaylandPointer<wl_registry, wl_registry_destroy> registry;
     static const struct wl_callback_listener s_callbackListener;
     wl_callback *callback = nullptr;
-    wl_registry *registry = nullptr;
     EventQueue *queue = nullptr;
 
 private:
