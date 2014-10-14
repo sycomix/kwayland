@@ -161,7 +161,6 @@ const struct wl_callback_listener Registry::Private::s_callbackListener = {
    globalSync
 };
 
-
 void Registry::Private::globalAnnounce(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t version)
 {
     auto r = reinterpret_cast<Registry::Private*>(data);
@@ -178,13 +177,11 @@ void Registry::Private::globalRemove(void *data, wl_registry *registry, uint32_t
 
 void Registry::Private::globalSync(void* data, wl_callback* callback, uint32_t serial)
 {
-    qDebug() << "globalSync!!";
     Q_UNUSED(serial)
     auto r = reinterpret_cast<Registry::Private*>(data);
     Q_ASSERT(r->callback == callback);
     r->handleGlobalSync();
     r->callback.destroy();
-    qDebug() << "globalSync d->callback destroyed";
 }
 
 void Registry::Private::handleGlobalSync()
