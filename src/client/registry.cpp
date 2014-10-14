@@ -55,7 +55,7 @@ public:
 
     WaylandPointer<wl_registry, wl_registry_destroy> registry;
     static const struct wl_callback_listener s_callbackListener;
-    wl_callback *callback = nullptr;
+    WaylandPointer<wl_callback, wl_callback_destroy> callback;
     EventQueue *queue = nullptr;
 
 private:
@@ -101,19 +101,13 @@ Registry::~Registry()
 void Registry::release()
 {
     d->registry.release();
-    if (d->callback) {
-        wl_callback_destroy(d->callback);
-        d->callback = nullptr;
-    }
+    d->callback.release();
 }
 
 void Registry::destroy()
 {
     d->registry.destroy();
-    if (d->callback) {
-        free(d->callback);
-        d->callback = nullptr;
-    }
+    d->callback.destroy();
 }
 
 void Registry::create(wl_display *display)
@@ -121,7 +115,7 @@ void Registry::create(wl_display *display)
     Q_ASSERT(display);
     Q_ASSERT(!isValid());
     d->registry.setup(wl_display_get_registry(display));
-    d->callback = wl_display_sync(display);
+    d->callback.setup(wl_display_sync(display));
     if (d->queue) {
         d->queue->addProxy(d->registry);
         d->queue->addProxy(d->callback);
@@ -189,6 +183,7 @@ void Registry::Private::globalSync(void* data, wl_callback* callback, uint32_t s
     auto r = reinterpret_cast<Registry::Private*>(data);
     Q_ASSERT(r->callback == callback);
     r->handleGlobalSync();
+    r->callback.destroy();
     qDebug() << "globalSync d->callback destroyed";
 }
 
