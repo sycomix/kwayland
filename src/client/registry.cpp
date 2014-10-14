@@ -111,7 +111,7 @@ void Registry::destroy()
 {
     d->registry.destroy();
     if (d->callback) {
-        wl_callback_destroy(d->callback);
+        free(d->callback);
         d->callback = nullptr;
     }
 }
@@ -148,6 +148,9 @@ void Registry::setEventQueue(EventQueue *queue)
     if (d->registry) {
         d->queue->addProxy(d->registry);
     }
+    if (d->callback) {
+        d->queue->addProxy(d->callback);
+    }
 }
 
 EventQueue *Registry::eventQueue()
@@ -161,7 +164,7 @@ const struct wl_registry_listener Registry::Private::s_registryListener = {
 };
 
 const struct wl_callback_listener Registry::Private::s_callbackListener = {
-    globalSync
+   globalSync
 };
 
 
@@ -181,13 +184,12 @@ void Registry::Private::globalRemove(void *data, wl_registry *registry, uint32_t
 
 void Registry::Private::globalSync(void* data, wl_callback* callback, uint32_t serial)
 {
+    qDebug() << "globalSync!!";
     Q_UNUSED(serial)
-
     auto r = reinterpret_cast<Registry::Private*>(data);
     Q_ASSERT(r->callback == callback);
     r->handleGlobalSync();
-    wl_callback_destroy(callback);
-    callback = nullptr;
+    qDebug() << "globalSync d->callback destroyed";
 }
 
 void Registry::Private::handleGlobalSync()

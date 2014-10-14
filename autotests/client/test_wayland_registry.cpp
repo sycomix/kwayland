@@ -41,8 +41,6 @@ private Q_SLOTS:
     void cleanup();
 
     void testCreate();
-    void testGlobalSync();
-    void testGlobalSyncThreaded();
     void testBindCompositor();
     void testBindShell();
     void testBindOutput();
@@ -50,6 +48,8 @@ private Q_SLOTS:
     void testBindSeat();
     void testRemoval();
     void testDestroy();
+    void testGlobalSync();
+    void testGlobalSyncThreaded();
 
 private:
     KWayland::Server::Display *m_display;
@@ -322,6 +322,7 @@ void TestWaylandRegistry::testGlobalSyncThreaded()
     QCOMPARE(syncSpy.count(), 1);
     thread->quit();
     thread->wait();
+    registry->destroy();
     delete thread;
 }
 
