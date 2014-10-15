@@ -32,21 +32,21 @@ else()
   target_include_directories(KF5WaylandServer INTERFACE "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${KF5_INCLUDE_INSTALL_DIR}>" )
 endif()
 
-set_target_properties(KF5WaylandServer PROPERTIES VERSION   ${KWAYLAND_VERSION_STRING}
+set_target_properties(KF5WaylandServer PROPERTIES VERSION ${KWAYLAND_VERSION_STRING}
                                                  SOVERSION ${KWAYLAND_SOVERSION}
                                                  EXPORT_NAME WaylandServer
 )
 
-# install(TARGETS KF5WaylandServer EXPORT KF5WaylandTargets ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})
-#
-# install(FILES
-#   ${CMAKE_CURRENT_BINARY_DIR}/KWayland/Server/kwaylandserver_export.h
-#   buffer_interface.h
-#   compositor_interface.h
-#   display.h
-#   output_interface.h
-#   seat_interface.h
-#   shell_interface.h
-#   surface_interface.h
-#   DESTINATION ${KF5_INCLUDE_INSTALL_DIR}/KWayland/Server COMPONENT Devel
-# )
+install(TARGETS KF5WaylandServer EXPORT KF5WaylandTargets ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/KWayland/Server/kwaylandserver_export.h
+    buffer_interface.h
+    compositor_interface.h
+    display.h
+    output_interface.h
+    seat_interface.h
+    shell_interface.h
+    surface_interface.h
+    DESTINATION ${KF5_INCLUDE_INSTALL_DIR}/KWayland/Server COMPONENT Devel
+)
