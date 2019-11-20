@@ -34,8 +34,8 @@ static int s_version = 1;
 class TabletSeatInterface::Private : public QtWaylandServer::zwp_tablet_seat_v2
 {
 public:
-    Private(Display* d)
-        : zwp_tablet_seat_v2(*d, s_version)
+    Private()
+        : zwp_tablet_seat_v2()
     {}
 
     void zwp_tablet_seat_v2_bind_resource(Resource *resource) override {
@@ -53,9 +53,9 @@ public:
 //     QVector<TabletPadInterface*> m_pads;
 };
 
-TabletSeatInterface::TabletSeatInterface(Display* d, QObject* parent)
+TabletSeatInterface::TabletSeatInterface(SeatInterface* seat, QObject* parent)
     : QObject(parent)
-    , d(new Private(d))
+    , d(new Private)
 {}
 
 TabletSeatInterface::~TabletSeatInterface() = default;
@@ -90,30 +90,25 @@ public:
     Private(Display *display, TabletManagerInterface* q)
         : zwp_tablet_manager_v2(*display, s_version)
         , q(q)
-        , m_display(display)
     {}
 
-    void zwp_tablet_manager_v2_get_tablet_seat(QtWaylandServer::zwp_tablet_manager_v2::Resource * resource, uint32_t tablet_seat, struct ::wl_resource * seat) override {
-        SeatInterface* seatIface = SeatInterface::get(seat);
-        TabletSeatInterface* tabletSeatIface = get(seatIface);
-        tabletSeatIface->d->add(resource->client(), tablet_seat, qMin(wl_resource_get_version(resource->handle), s_version));
-    }
-
-    void zwp_tablet_manager_v2_bind_resource(QtWaylandServer::zwp_tablet_manager_v2::Resource * resource) override {
-//         add(resource->client(), qMin(wl_resource_get_version(resource->handle), s_version));
+    void zwp_tablet_manager_v2_get_tablet_seat(QtWaylandServer::zwp_tablet_manager_v2::Resource * resource, uint32_t tablet_seat, struct ::wl_resource * seat_resource) override {
+        auto seat = SeatInterface::get(seat_resource);
+        qCritical() << "get tablet seat" << resource << tablet_seat << seat;
+        TabletSeatInterface* tsi = get(seat);
+        tsi->d->add(resource->client(), tablet_seat, s_version);
     }
 
     TabletSeatInterface* get(SeatInterface* seat)
     {
         auto& tabletSeat = m_seats[seat];
         if (!tabletSeat) {
-            tabletSeat = new TabletSeatInterface(m_display, q);
+            tabletSeat = new TabletSeatInterface(seat, q);
         }
         return tabletSeat;
     }
 
     TabletManagerInterface* const q;
-    Display* const m_display;
     QHash<SeatInterface*, TabletSeatInterface*> m_seats;
 };
 
@@ -125,10 +120,10 @@ TabletManagerInterface::TabletManagerInterface(Display *display, QObject *parent
 
 TabletManagerInterface::~TabletManagerInterface() = default;
 
-TabletSeatInterface* TabletManagerInterface::seat(SeatInterface* seat)
-{
-    return d->get(seat);
-}
+// TabletSeatInterface* TabletManagerInterface::seat(SeatInterface* seat)
+// {
+//     return d->get(seat);
+// }
 
 //
 // void TabletManagerInterface::cancel()
