@@ -40,7 +40,7 @@ class KWAYLANDSERVER_EXPORT TabletManagerInterface : public QObject
 public:
     virtual ~TabletManagerInterface();
 
-//     TabletSeatInterface* seat(SeatInterface* seat);
+    TabletSeatInterface* seat(SeatInterface* seat) const;
 
 private:
     friend class Display;
@@ -77,18 +77,18 @@ public:
     };
 
     void sendRemoved();
-    void sendProximityIn(uint32_t serial, Resource *tablet, Resource *surface);
+    void sendProximityIn(quint32 serial, Resource *tablet, Resource *surface);
     void sendProximityOut();
     void sendUp();
-    void sendDown(uint32_t serial);
-    void sendPressure(uint32_t pressure);
-    void sendDistance(uint32_t distance);
-    void sendTilt(uint32_t degreesX, uint32_t degreesY);
-    void sendRotation(uint32_t degrees);
-    void sendSlider(int32_t position);
-    void sendWheel(int32_t degrees, int32_t clicks);
-    void sendButton(uint32_t serial, uint32_t button, bool pressed);
-    void sendFrame(uint32_t time);
+    void sendDown(quint32 serial);
+    void sendPressure(quint32 pressure);
+    void sendDistance(quint32 distance);
+    void sendTilt(quint32 degreesX, quint32 degreesY);
+    void sendRotation(quint32 degrees);
+    void sendSlider(qint32 position);
+    void sendWheel(qint32 degrees, qint32 clicks);
+    void sendButton(quint32 serial, quint32 button, bool pressed);
+    void sendFrame(quint32 time);
 
     void sendMotion(const QPoint &pos);
 
@@ -98,7 +98,7 @@ public:
 
 private:
     friend class TabletSeatInterface;
-    explicit TabletToolInterface(Type type, uint32_t hsh, uint32_t hsl, uint32_t hih, uint32_t hil, const QVector<Capability> &capability, QObject *parent);
+    explicit TabletToolInterface(Type type, quint32 hsh, quint32 hsl, quint32 hih, quint32 hil, const QVector<Capability> &capability, QObject *parent);
     class Private;
     QScopedPointer<Private> d;
 };
@@ -113,7 +113,7 @@ public:
 
 private:
     friend class TabletSeatInterface;
-    explicit TabletInterface(uint32_t vendorId, uint32_t productId, const QString &name, const QStringList &paths, QObject* parent);
+    explicit TabletInterface(quint32 vendorId, quint32 productId, const QString &name, const QStringList &paths, QObject* parent);
     class Private;
     QScopedPointer<Private> d;
 };
@@ -124,9 +124,17 @@ private:
 // public:
 //     virtual ~TabletPadRingInterface();
 //
+//     enum Source { Finger = 1 };
+//     void sendSource(Source source);
+//     void sendAngle(quint32 degrees);
+//     void sendFrame(quint32 time);
+//     void sendStop();
+//
+// Q_SIGNALS:
+//     void descriptionChanged(const QString &description);
+//
 // private:
-//     friend class Display;
-//     explicit TabletPadRingInterface(Display *d, QObject *parent);
+//     explicit TabletPadRingInterface(QObject *parent);
 //     class Private;
 //     QScopedPointer<Private> d;
 // };
@@ -134,25 +142,22 @@ private:
 // class TabletPadStripInterface : public QObject
 // {
 //     Q_OBJECT
+//     Q_PROPERTY(QString description READ description NOTIFY descriptionChanged)
 // public:
 //     virtual ~TabletPadStripInterface();
+//     QString description() const;
+//
+//     enum Source { Finger = 1 };
+//     void sendSource(Source source);
+//     void sendPosition(quint32 position);
+//     void sendFrame(quint32 timestamp);
+//     void sendStop();
+//
+// Q_SIGNALS:
+//     void descriptionChanged(const QString &description);
 //
 // private:
-//     friend class Display;
-//     explicit TabletPadStripInterface(Display *d, QObject *parent);
-//     class Private;
-//     QScopedPointer<Private> d;
-// };
-//
-// class TabletPadGroupInterface : public QObject
-// {
-//     Q_OBJECT
-// public:
-//     virtual ~TabletPadGroupInterface();
-//
-// private:
-//     friend class Display;
-//     explicit TabletPadGroupInterface(Display *d, QObject *parent);
+//     explicit TabletPadStripInterface(QObject *parent);
 //     class Private;
 //     QScopedPointer<Private> d;
 // };
@@ -163,9 +168,25 @@ private:
 // public:
 //     virtual ~TabletPadInterface();
 //
+//     void sendEnter(quint32 serial, struct ::wl_resource *tablet, struct ::wl_resource *surface);
+//     void sendLeave(quint32 serial, struct ::wl_resource *surface);
+//
 // private:
-//     friend class Display;
-//     explicit TabletPadInterface(Display *d, QObject *parent);
+//     explicit TabletPadInterface(const QStringList & paths, QObject *parent);
+//     class Private;
+//     QScopedPointer<Private> d;
+// };
+//
+// class TabletPadGroupInterface : public QObject
+// {
+//     Q_OBJECT
+// public:
+//     virtual ~TabletPadGroupInterface();
+//
+//     void modeSwitch(uint32_t time, uint32_t serial, uint32_t mode);
+//
+// private:
+//     explicit TabletPadGroupInterface(TabletPadInterface* pad, QObject *parent);
 //     class Private;
 //     QScopedPointer<Private> d;
 // };
@@ -176,14 +197,14 @@ class KWAYLANDSERVER_EXPORT TabletSeatInterface : public QObject
 public:
     virtual ~TabletSeatInterface();
 
-    void addTablet(uint32_t vendorId, uint32_t productId, const QString &name, const QStringList &paths);
+    void addTablet(quint32 vendorId, quint32 productId, const QString &name, const QStringList &paths);
     void addTool(TabletToolInterface::Type type, quint64 hardwareSerial, quint64 hardwareId, const QVector<TabletToolInterface::Capability> &capabilities);
 
-    TabletToolInterface* toolForSerialId(quint64 serialId) const;
+    TabletToolInterface* toolForHardwareId(quint64 hardwareId) const;
 
 private:
     friend class TabletManagerInterface;
-    explicit TabletSeatInterface(SeatInterface* seat, QObject* parent);
+    explicit TabletSeatInterface(QObject* parent);
     class Private;
     QScopedPointer<Private> d;
 };

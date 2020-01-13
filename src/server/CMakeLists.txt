@@ -17,6 +17,7 @@ set(SERVER_LIB_SRCS
     filtered_display.cpp
     global.cpp
     idle_interface.cpp
+    inputmethodinterface.cpp
     idleinhibit_interface.cpp
     idleinhibit_interface_v1.cpp
     keyboard_interface.cpp
@@ -225,6 +226,11 @@ ecm_add_wayland_server_protocol(SERVER_LIB_SRCS
 ecm_add_qtwayland_server_protocol(SERVER_LIB_SRCS
     PROTOCOL ${WaylandProtocols_DATADIR}/unstable/tablet/tablet-unstable-v2.xml
     BASENAME tablet-unstable-v2
+)
+
+ecm_add_qtwayland_server_protocol(SERVER_LIB_SRCS
+    PROTOCOL ${WaylandProtocols_DATADIR}/unstable/input-method/input-method-unstable-v1.xml
+    BASENAME input-method-unstable-v1
 )
 
 set(SERVER_GENERATED_SRCS

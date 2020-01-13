@@ -50,21 +50,20 @@ public:
 
     QVector<TabletToolInterface*> m_tools;
     QVector<TabletInterface*> m_tablets;
-//     QVector<TabletPadInterface*> m_pads;
 };
 
-TabletSeatInterface::TabletSeatInterface(SeatInterface* seat, QObject* parent)
+TabletSeatInterface::TabletSeatInterface(QObject* parent)
     : QObject(parent)
     , d(new Private)
 {}
 
 TabletSeatInterface::~TabletSeatInterface() = default;
 
-void KWayland::Server::TabletSeatInterface::addTool(TabletToolInterface::Type type, quint64 hardwareSerial, quint64 hardwareId, const QVector<TabletToolInterface::Capability> &capabilities)
+void TabletSeatInterface::addTool(TabletToolInterface::Type type, quint64 hardwareSerial, quint64 hardwareId, const QVector<TabletToolInterface::Capability> &capabilities)
 {
     const auto MAX_UINT_32 = std::numeric_limits<quint32>::max();
     auto iface = new TabletToolInterface(type, hardwareSerial >> 32, hardwareSerial & MAX_UINT_32,
-                                                             hardwareId >> 32, hardwareId & MAX_UINT_32, capabilities, this);
+                                               hardwareId >> 32, hardwareId & MAX_UINT_32, capabilities, this);
     for (auto r : d->resourceMap())
         d->send_tool_added(r->handle);
 
@@ -73,7 +72,7 @@ void KWayland::Server::TabletSeatInterface::addTool(TabletToolInterface::Type ty
     );
 }
 
-void KWayland::Server::TabletSeatInterface::addTablet(uint32_t vendorId, uint32_t productId, const QString &name, const QStringList &paths)
+void TabletSeatInterface::addTablet(uint32_t vendorId, uint32_t productId, const QString &name, const QStringList &paths)
 {
     auto iface = new TabletInterface(vendorId, productId, name, paths, this);
     for (auto r : d->resourceMap())
@@ -92,7 +91,7 @@ public:
         , q(q)
     {}
 
-    void zwp_tablet_manager_v2_get_tablet_seat(QtWaylandServer::zwp_tablet_manager_v2::Resource * resource, uint32_t tablet_seat, struct ::wl_resource * seat_resource) override {
+    void zwp_tablet_manager_v2_get_tablet_seat(Resource * resource, uint32_t tablet_seat, struct ::wl_resource * seat_resource) override {
         auto seat = SeatInterface::get(seat_resource);
         qCritical() << "get tablet seat" << resource << tablet_seat << seat;
         TabletSeatInterface* tsi = get(seat);
@@ -103,7 +102,7 @@ public:
     {
         auto& tabletSeat = m_seats[seat];
         if (!tabletSeat) {
-            tabletSeat = new TabletSeatInterface(seat, q);
+            tabletSeat = new TabletSeatInterface(q);
         }
         return tabletSeat;
     }
@@ -116,6 +115,11 @@ TabletManagerInterface::TabletManagerInterface(Display *display, QObject *parent
     : QObject(parent)
     , d(new Private(display, this))
 {
+}
+
+TabletSeatInterface* TabletManagerInterface::seat(SeatInterface* seat) const
+{
+    return d->m_seats.value(seat);
 }
 
 TabletManagerInterface::~TabletManagerInterface() = default;
@@ -154,7 +158,7 @@ public:
         , m_capabilities(capabilities)
     {}
 
-    void zwp_tablet_tool_v2_bind_resource(QtWaylandServer::zwp_tablet_tool_v2::Resource * /*resource*/) override {
+    void zwp_tablet_tool_v2_bind_resource(Resource * /*resource*/) override {
         send_type(m_type);
         send_hardware_serial(m_hardwareSerialHigh, m_hardwareSerialLow);
         send_hardware_id_wacom(m_hardwareIdHigh, m_hardwareIdLow);
@@ -176,77 +180,77 @@ TabletToolInterface::TabletToolInterface(Type type, uint32_t hsh, uint32_t hsl, 
 
 TabletToolInterface::~TabletToolInterface() = default;
 
-void KWayland::Server::TabletToolInterface::sendButton(uint32_t serial, uint32_t button, bool pressed)
+void TabletToolInterface::sendButton(uint32_t serial, uint32_t button, bool pressed)
 {
     d->send_button(serial, button, pressed ? QtWaylandServer::zwp_tablet_tool_v2::button_state_pressed : QtWaylandServer::zwp_tablet_tool_v2::button_state_released);
 }
 
-void KWayland::Server::TabletToolInterface::sendMotion(const QPoint& pos)
+void TabletToolInterface::sendMotion(const QPoint& pos)
 {
     d->send_motion(pos.x(), pos.y());
 }
 
-void KWayland::Server::TabletToolInterface::sendDistance(uint32_t distance)
+void TabletToolInterface::sendDistance(uint32_t distance)
 {
     d->send_distance(distance);
 }
 
-void KWayland::Server::TabletToolInterface::sendFrame(uint32_t time)
+void TabletToolInterface::sendFrame(uint32_t time)
 {
     d->send_frame(time);
 }
 
-void KWayland::Server::TabletToolInterface::sendPressure(uint32_t pressure)
+void TabletToolInterface::sendPressure(uint32_t pressure)
 {
     d->send_pressure(pressure);
 }
 
-void KWayland::Server::TabletToolInterface::sendRotation(uint32_t degrees)
+void TabletToolInterface::sendRotation(uint32_t degrees)
 {
     d->send_rotation(degrees);
 }
 
-void KWayland::Server::TabletToolInterface::sendSlider(int32_t position)
+void TabletToolInterface::sendSlider(int32_t position)
 {
     d->send_slider(position);
 }
 
-void KWayland::Server::TabletToolInterface::sendTilt(uint32_t degreesX, uint32_t degreesY)
+void TabletToolInterface::sendTilt(uint32_t degreesX, uint32_t degreesY)
 {
     d->send_tilt(degreesX, degreesY);
 }
 
-void KWayland::Server::TabletToolInterface::sendWheel(int32_t degrees, int32_t clicks)
+void TabletToolInterface::sendWheel(int32_t degrees, int32_t clicks)
 {
     d->send_wheel(degrees, clicks);
 }
 
-void KWayland::Server::TabletToolInterface::sendProximityIn(uint32_t serial, KWayland::Server::Resource* tablet, KWayland::Server::Resource* surface)
+void TabletToolInterface::sendProximityIn(uint32_t serial, Resource* tablet, Resource* surface)
 {
     d->send_proximity_in(serial, tablet->resource(), surface->resource());
 }
 
-void KWayland::Server::TabletToolInterface::sendProximityOut()
+void TabletToolInterface::sendProximityOut()
 {
     d->send_proximity_out();
 }
 
-void KWayland::Server::TabletToolInterface::sendDown(uint32_t serial)
+void TabletToolInterface::sendDown(uint32_t serial)
 {
     d->send_down(serial);
 }
 
-void KWayland::Server::TabletToolInterface::sendUp()
+void TabletToolInterface::sendUp()
 {
     d->send_up();
 }
 
-void KWayland::Server::TabletToolInterface::sendRemoved()
+void TabletToolInterface::sendRemoved()
 {
     d->send_removed();
 }
 
-wl_resource * KWayland::Server::TabletToolInterface::resource() const
+wl_resource * TabletToolInterface::resource() const
 {
     return d->resource()->handle;
 }
@@ -262,7 +266,7 @@ public:
         , m_paths(paths)
     {}
 
-    void zwp_tablet_v2_bind_resource(QtWaylandServer::zwp_tablet_v2::Resource * /*resource*/) override {
+    void zwp_tablet_v2_bind_resource(Resource * /*resource*/) override {
         send_name(m_name);
         send_id(m_vendorId, m_productId);
         for (const auto &path : qAsConst(m_paths))
@@ -276,7 +280,7 @@ public:
     const QStringList m_paths;
 };
 
-KWayland::Server::TabletInterface::TabletInterface(uint32_t vendorId, uint32_t productId, const QString &name, const QStringList &paths, QObject* parent)
+TabletInterface::TabletInterface(uint32_t vendorId, uint32_t productId, const QString &name, const QStringList &paths, QObject* parent)
     : QObject(parent)
     , d(new Private(vendorId, productId, name, paths))
 {
@@ -289,8 +293,7 @@ wl_resource * TabletInterface::resource() const
     return d->resource()->handle;
 }
 
-
-KWayland::Server::TabletToolInterface * KWayland::Server::TabletSeatInterface::toolForSerialId(quint64 serialId) const
+TabletToolInterface * TabletSeatInterface::toolForHardwareId(quint64 serialId) const
 {
     for (auto tool : d->m_tools) {
         if (tool->hardwareSerial() == serialId)
@@ -299,7 +302,178 @@ KWayland::Server::TabletToolInterface * KWayland::Server::TabletSeatInterface::t
     return nullptr;
 }
 
-quint64 KWayland::Server::TabletToolInterface::hardwareSerial() const
+quint64 TabletToolInterface::hardwareSerial() const
 {
     return quint64(quint64(d->m_hardwareIdHigh) << 32) + d->m_hardwareIdLow;
 }
+
+#if 0
+
+class TabletPadInterface::Private : public QtWaylandServer::zwp_tablet_pad_v2
+{
+public:
+    Private(const QStringList &paths)
+        : zwp_tablet_pad_v2()
+        , m_paths(paths)
+    {}
+
+    void zwp_tablet_pad_v2_bind_resource(Resource * /*resource*/) override {
+//         zwp_tablet_pad_group_v2_send_strip();
+        for (const auto &path : qAsConst(m_paths))
+            send_path(path);
+        send_done();
+    }
+    const QStringList m_paths;
+};
+
+TabletPadInterface::TabletPadInterface(const QStringList & paths, QObject* parent)
+    : QObject(parent)
+    , d(new Private(paths))
+{
+}
+
+TabletPadInterface::~TabletPadInterface() = default;
+
+void TabletPadInterface::sendEnter(quint32 serial, struct ::wl_resource *tablet, struct ::wl_resource *surface)
+{
+    d->send_enter(serial, tablet, surface);
+}
+
+void TabletPadInterface::sendLeave(quint32 serial, struct ::wl_resource *surface)
+{
+    d->send_leave(serial, surface);
+}
+
+class TabletPadStripInterface::Private : public QtWaylandServer::zwp_tablet_pad_strip_v2
+{
+public:
+    Private(TabletPadStripInterface* q)
+        : zwp_tablet_pad_strip_v2()
+        , q(q)
+    {}
+
+    void zwp_tablet_pad_strip_v2_set_feedback(Resource * resource,
+                                              const QString & description,
+                                              uint32_t serial) override
+    {
+        Q_UNUSED(resource);
+        Q_UNUSED(serial);
+        if (m_description != description) {
+            m_description = description;
+            Q_EMIT q->descriptionChanged(description);
+        }
+    }
+
+    QString m_description;
+    TabletPadStripInterface* const q;
+};
+
+TabletPadStripInterface::TabletPadStripInterface(QObject* parent)
+    : QObject(parent)
+    , d(new Private(this))
+{
+}
+
+TabletPadStripInterface::~TabletPadStripInterface() = default;
+
+QString TabletPadStripInterface::description() const
+{
+    return d->m_description;
+}
+
+void TabletPadStripInterface::sendSource(Source source)
+{
+    d->send_source(source);
+}
+
+void TabletPadStripInterface::sendFrame(quint32 timestamp)
+{
+    d->send_frame(timestamp);
+}
+
+void TabletPadStripInterface::sendPosition(quint32 position)
+{
+    d->send_position(position);
+}
+
+void TabletPadStripInterface::sendStop()
+{
+    d->send_stop();
+}
+
+class TabletPadRingInterface::Private : public QtWaylandServer::zwp_tablet_pad_ring_v2
+{
+public:
+    Private(TabletPadRingInterface* q)
+        : zwp_tablet_pad_ring_v2()
+        , q(q)
+    {}
+
+    void zwp_tablet_pad_ring_v2_set_feedback(Resource * resource,
+                                             const QString & description,
+                                             uint32_t serial) override
+    {
+        Q_UNUSED(resource);
+        Q_UNUSED(serial);
+        if (m_description != description) {
+            m_description = description;
+            Q_EMIT q->descriptionChanged(description);
+        }
+    }
+
+    QString m_description;
+    TabletPadRingInterface* const q;
+};
+
+TabletPadRingInterface::TabletPadRingInterface(QObject* parent)
+    : QObject(parent)
+    , d(new Private(this))
+{
+}
+
+TabletPadRingInterface::~TabletPadRingInterface() = default;
+
+void TabletPadRingInterface::sendAngle(quint32 degrees)
+{
+    d->send_angle(degrees);
+}
+
+void TabletPadRingInterface::sendFrame(quint32 time)
+{
+    d->send_frame(time);
+}
+
+void TabletPadRingInterface::sendSource(TabletPadRingInterface::Source source)
+{
+    d->send_source(source);
+}
+
+void TabletPadRingInterface::sendStop()
+{
+    d->send_stop();
+}
+
+class TabletPadGroupInterface::Private : public QtWaylandServer::zwp_tablet_pad_group_v2
+{
+public:
+    Private(TabletPadInterface* pad)
+        : zwp_tablet_pad_group_v2()
+        , pad(pad)
+    {}
+
+    void zwp_tablet_pad_group_v2_bind_resource(Resource * resource) override
+    {
+        send_buttons({});
+        send_done();
+    }
+    TabletPadInterface* const pad;
+};
+
+TabletPadGroupInterface::TabletPadGroupInterface(TabletPadInterface* pad, QObject* parent)
+    : QObject(parent)
+    , d(new Private(pad))
+{
+}
+
+TabletPadGroupInterface::~TabletPadGroupInterface() = default;
+#endif
